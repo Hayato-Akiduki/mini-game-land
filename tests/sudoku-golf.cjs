@@ -1,9 +1,9 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const html=fs.readFileSync('dist/client/index.html','utf8');
+const html=require('./client-html.cjs')();
 for(const [,script] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(script);
 const source=html.slice(html.indexOf('const SUDOKU_PUZZLE'),html.lastIndexOf('loadSave();'));
 const listeners=new Map(),awards=[];
-const context={games:{},Math,document:{addEventListener:(k,f)=>listeners.set(k,f),removeEventListener:k=>listeners.delete(k)},recordWin:(...args)=>awards.push(args),requestAnimationFrame:()=>1,cancelAnimationFrame:()=>{}};
+const context={games:{},onGameKey:()=>()=>{},Math,document:{addEventListener:(k,f)=>listeners.set(k,f),removeEventListener:k=>listeners.delete(k)},recordWin:(...args)=>awards.push(args),requestAnimationFrame:()=>1,cancelAnimationFrame:()=>{}};
 vm.createContext(context);vm.runInContext(source+';globalThis.api={puzzle:SUDOKU_PUZZLE,solution:SUDOKU_SOLUTION,conflicts:sudokuConflicts,complete:sudokuComplete,holes:MINI_GOLF_HOLES,step:miniGolfStep};',context);
 const {puzzle,solution,conflicts,complete,holes,step}=context.api;
 assert.equal(complete([...solution].map(Number)),true);
@@ -44,7 +44,10 @@ assert.ok(fs.readFileSync('dist/server/index.js','utf8').includes("'sudoku','min
 // a single terminal award, and cancellation when leaving the game.
 let scheduled=null,cancelled=false;
 context.requestAnimationFrame=f=>{scheduled=f;return 7;};context.cancelAnimationFrame=id=>{assert.equal(id,7);cancelled=true;};
-vm.runInContext(source.slice(source.indexOf('games.minigolf=function')).replace('  start();raf=', '  el.test={get ball(){return ball;},get index(){return index;}};start();raf='),context);
+// Re-run only the minigolf function; later games declare top-level consts that can't be redeclared.
+const golfStart=source.indexOf('games.minigolf=function'),golfEnd=source.indexOf('\n// GAME',golfStart);
+assert.ok(golfStart>=0&&golfEnd>golfStart,'minigolf source found');
+vm.runInContext(source.slice(golfStart,golfEnd).replace('  start();raf=', '  el.test={get ball(){return ball;},get index(){return index;}};start();raf='),context);
 const golfNodes={},canvasContext=new Proxy({},{get:()=>()=>{}});
 const golfEl={querySelector:id=>golfNodes[id]??=node()};
 golfEl.querySelector('#golf-course').getContext=()=>canvasContext;

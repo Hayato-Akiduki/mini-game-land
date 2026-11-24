@@ -1,5 +1,5 @@
 const fs=require('fs'),assert=require('assert');
-const html=fs.readFileSync('dist/client/index.html','utf8');
+const html=require('./client-html.cjs')();
 assert.match(html,/function showGachaReveal\(results,kind\)/);
 assert.match(html,/抽選中…/);
 assert.match(html,/rarity-UR[^}]*--reveal-color:#ffd93d/);

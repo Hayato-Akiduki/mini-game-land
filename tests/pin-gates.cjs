@@ -1,12 +1,12 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const html=fs.readFileSync('dist/client/index.html','utf8');
+const html=require('./client-html.cjs')();
 for(const [,script] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(script);
 const source=html.slice(html.indexOf('// Ad-inspired mini-games:'),html.indexOf('// Water Sort:'));
 const awards=[],delays=[],listeners=new Map();let scheduled,cancelled=0;
 const fixedMath=Object.create(Math);fixedMath.random=()=>.25;
-const ctx={games:{},Math:fixedMath,gameDelay:f=>delays.push(f),recordWin:(id,score)=>awards.push({id,score,won:true}),recordLoss:(id,score)=>awards.push({id,score,won:false}),requestAnimationFrame:f=>{scheduled=f;return 1;},cancelAnimationFrame:()=>cancelled++,document:{addEventListener:(k,f)=>listeners.set(k,f),removeEventListener:k=>listeners.delete(k)}};
-vm.createContext(ctx);vm.runInContext(source+';globalThis.api={stages:PIN_PULL_STAGES,initial:pinPullInitial,pull:pinPullMove,apply:gateRunnerApply,course:gateRunnerCourse};',ctx);
-const {stages,initial,pull,apply,course}=ctx.api;
+const ctx={games:{},onGameKey:()=>()=>{},Math:fixedMath,gameDelay:f=>delays.push(f),recordWin:(id,score)=>awards.push({id,score,won:true}),recordLoss:(score,id)=>awards.push({id,score,won:false}),requestAnimationFrame:f=>{scheduled=f;return 1;},cancelAnimationFrame:()=>cancelled++,document:{addEventListener:(k,f)=>listeners.set(k,f),removeEventListener:k=>listeners.delete(k)}};
+vm.createContext(ctx);vm.runInContext(source+';globalThis.api={stages:PIN_PULL_STAGES,initial:pinPullInitial,pull:pinPullMove,apply:gateRunnerApply,course:gateRunnerCourse,speed:GATE_RUNNER_SPEED};',ctx);
+const {stages,initial,pull,apply,course,speed}=ctx.api;
 function solve(stage){
   const queue=[{state:initial(stage),path:[]}],seen=new Set();
   for(const entry of queue){
@@ -59,6 +59,23 @@ assert.equal(apply(10,{kind:'gate',op:'×',value:2}),20);
 assert.equal(apply(11,{kind:'gate',op:'÷',value:2}),5);
 assert.equal(apply(5,{kind:'gate',op:'-',value:10}),0);
 assert.equal(apply(5,{kind:'enemy',value:10}),0);
+// Two-step gates run top to bottom; division and ×1.5 round down.
+assert.equal(apply(10,{kind:'gate',steps:[['+',5],['×',2]]}),30);
+assert.equal(apply(10,{kind:'gate',steps:[['×',2],['+',5]]}),25);
+assert.equal(apply(11,{kind:'gate',steps:[['÷',2],['×',3]]}),15);
+assert.equal(apply(11,{kind:'gate',steps:[['×',1.5]]}),16);
+assert.equal(apply(4,{kind:'gate',steps:[['-',6],['×',3]]}),0);
+// Courses are generated per run: the two gates of a section never tie, the best route
+// always beats the boss, and taking the worse gate every time never does.
+for(let i=0;i<500;i++){
+  const rows=course(()=>Math.random());let best=10,worst=10;
+  for(const row of rows.slice(0,-1)){
+    assert.equal(row.choices.length,2);const v=row.choices.map(e=>apply(best,e));assert.notEqual(v[0],v[1],'no ties');
+    best=Math.max(...v);worst=Math.min(...row.choices.map(e=>apply(worst,e)));
+  }
+  const boss=rows.at(-1).choices[0];assert.equal(boss.kind,'boss');
+  assert.ok(best>boss.value,'best route wins');assert.ok(worst<=boss.value,'worst route loses');
+}
 for(const random of [()=>.25,()=>.75]){
   let n=10;for(const row of course(random)){n=Math.max(...row.choices.map(e=>apply(n,e)));assert.ok(n>0,'A safe route exists for either lane arrangement');}
 }
@@ -75,7 +92,7 @@ function race(best){
     const values=row.choices.map(e=>apply(count,e)),choice=best?values.indexOf(Math.max(...values)):values.indexOf(Math.min(...values));
     el.nodes[choice===0?'#gate-left':'#gate-right'].onclick();count=values[choice];
     // Start and arrive exactly at each gate using controlled frame times.
-    let remaining=(row.z-previousZ)/125;
+    let remaining=(row.z-previousZ)/speed;
     while(remaining>1e-8){const dt=Math.min(.04,remaining);now+=dt*1000;scheduled(now);remaining-=dt;}
     now+=.001;scheduled(now);previousZ=row.z;
     if(count<=0)break;

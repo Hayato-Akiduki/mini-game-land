@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const html=fs.readFileSync('dist/client/index.html','utf8');
+const html=require('./client-html.cjs')();
 const claim=html.match(/function claimTerminalResult\([^]*?\n}/)[0];
 const ctx={DIRECT_POINT_GAMES:new Set(['blackjack','roulette','slot','pachinko']),resultSession:null};
 vm.createContext(ctx);vm.runInContext(claim,ctx);

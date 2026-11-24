@@ -1,4 +1,4 @@
-CREATE TABLE `scores` (
+CREATE TABLE IF NOT EXISTS `scores` (
 	`id` text PRIMARY KEY NOT NULL,
 	`player_id` text NOT NULL,
 	`username` text NOT NULL,
@@ -11,5 +11,5 @@ CREATE TABLE `scores` (
 	`rules_version` integer DEFAULT 1 NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `idx_scores_game_rules_score` ON `scores` (`game_id`,`rules_version`,`score`);--> statement-breakpoint
-CREATE INDEX `idx_scores_player_game` ON `scores` (`player_id`,`game_id`);
+CREATE INDEX IF NOT EXISTS `idx_scores_game_rules_score` ON `scores` (`game_id`,`rules_version`,`score`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_scores_player_game` ON `scores` (`player_id`,`game_id`);

@@ -1,6 +1,6 @@
 const fs=require('node:fs'),assert=require('node:assert/strict');
 const server=fs.readFileSync('dist/server/index.js','utf8');
-const client=fs.readFileSync('dist/client/index.html','utf8');
+const client=require('./client-html.cjs')();
 assert.match(server,/LEFT JOIN player_profiles AS profile ON profile\.player_id = ranked\.player_id/);
 assert.match(server,/COALESCE\(profile\.avatar, ranked\.avatar\) AS avatar/);
 assert.match(client,/syncOnlineProfile\(\)\.then\(\(\)=>renderLocalRanking\(rankingGame\)\)/);

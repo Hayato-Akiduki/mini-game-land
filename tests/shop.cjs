@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const html=fs.readFileSync('dist/client/index.html','utf8');
+const html=require('./client-html.cjs')();
 const nodes=Object.fromEntries(['home','shop-page','gacha-page','bgm-gacha-page','items-page','back-btn'].map(id=>[id,{style:{display:'none'}}]));
 const ctx={document:{getElementById:id=>nodes[id]},window:{scrollTo(){}},goHome(){Object.values(nodes).forEach(n=>n.style.display='none');},setTaskbarActive(){},renderShopPage(){},renderLocalRanking(){},rankingGame:'memory',saveData:{totalScore:500,ownedThemes:[],ownedAvatars:[],profile:{}},THEMES:{test:{price:200,name:'Test',colors:['blue']}},AVATAR_ITEMS:[{icon:'A',price:100,name:'Avatar'}],applyTheme(){},persistSave(){},renderHome(){},checkMetaProgress(){},syncOnlineProfile(){return Promise.resolve();},updateUI(){},showToast(){}};
 vm.createContext(ctx);

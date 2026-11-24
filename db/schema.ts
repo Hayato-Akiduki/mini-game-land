@@ -38,6 +38,7 @@ export const playerProfiles = sqliteTable(
     avatar: text('avatar').notNull().default('🎮'),
     level: integer('level').notNull().default(1),
     totalPoints: integer('total_points').notNull().default(0),
+    totalEarnedPoints: integer('total_earned_points').notNull().default(0),
     updatedAt: text('updated_at').notNull(),
   },
   (table) => [

@@ -1,6 +1,6 @@
 // Run from the project root: node tests/pinball.cjs
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
-const html=fs.readFileSync('dist/client/index.html','utf8');
+const html=require('./client-html.cjs')();
 for(const [,js]of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(js);
 const source=html.match(/games\.pinball = function\(el\) \{[\s\S]*?\n\};/)[0];
 function setup(){
@@ -18,8 +18,10 @@ const c=setup();c.t.launch();c.t.setState({ball:{launching:false,y:660},score:10
 c.t.launch();c.t.setState({time:30,ball:{launching:false,y:660},score:100,servedScore:100});c.t.step(1/120);assert.equal(c.t.state.lives,3,'zero-score save');
 c.t.launch();c.t.setState({time:60,ball:{launching:false,y:660},score:200,servedScore:100});c.t.step(1/120);assert.equal(c.t.state.lives,2,'earned ball drains after save expires');
 function shot(t){const s=setup();s.t.launch();s.t.setState({ball:{launching:false}});s.t.held.left=true;const f=s.t.flippers[0],angle=.28-11/120;
- s.t.setState({ball:{x:f.x+82*t*Math.cos(angle),y:f.y+82*t*Math.sin(angle)-16,vx:0,vy:100}});s.t.step(1/120);assert(s.t.state.ball.vy<0);return s.t.state.ball.vx;}
+ s.t.setState({ball:{x:f.x+f.len*t*Math.cos(angle),y:f.y+f.len*t*Math.sin(angle)-16,vx:0,vy:100}});s.t.step(1/120);assert(s.t.state.ball.vy<0);return s.t.state.ball.vx;}
 assert(shot(.2)<0&&shot(.85)>0,'contact position changes aiming direction');
+// At rest the visible gap between the flipper tips (24px strokes, round caps) is about two balls wide.
+{const s=setup(),[l,r]=s.t.flippers,tip=f=>f.x+f.side*f.len*Math.cos(f.angle),gap=tip(r)-tip(l)-24;assert(gap>=30&&gap<=34,'flipper gap '+gap);}
 const d=setup();d.t.launch();d.t.setState({ball:{launching:false}});for(const target of d.t.targets){d.t.setState({ball:{x:target.x,y:target.y-20,vx:0,vy:100}});d.t.step(1/120);}
 assert.equal(d.t.state.score,1600,'four targets award mission bonus');assert(d.t.targets.every(t=>!t.lit));
 d.t.setState({time:40,score:1700,servedScore:1600,lives:1,ball:{y:660}});d.t.step(1/120);assert.equal(d.awards,1);assert.equal(d.t.state.running,false);
