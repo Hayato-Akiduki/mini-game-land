@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
-const html = fs.readFileSync('dist/client/index.html', 'utf8');
+const html = require('./client-html.cjs')();
 const nodes = new Map();
 function node(id) {
   if (!nodes.has(id)) nodes.set(id, { hidden:false, dataset:{}, attributes:{}, setAttribute(k,v){this.attributes[k]=v;}, focus(){this.focused=true;} });

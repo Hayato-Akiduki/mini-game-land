@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const html=fs.readFileSync('dist/client/index.html','utf8');
+const html=require('./client-html.cjs')();
 for(const [,script] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(script);
 function node(){return {innerHTML:'',textContent:'',children:[],classList:{add(){}},setAttribute(){},addEventListener(){},appendChild(c){this.children.push(c);}};}
 for(const [id,count] of [['easy',8],['normal',16],['hard',24]]){

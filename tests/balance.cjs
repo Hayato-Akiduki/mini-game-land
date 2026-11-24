@@ -1,5 +1,5 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
-const html=fs.readFileSync('dist/client/index.html','utf8');
+const html=require('./client-html.cjs')();
 const start=html.indexOf("const DIRECT_POINT_GAMES");
 const end=html.indexOf("function addScore",start);
 const ctx={saveData:{scoreHistory:[]},Math,Number};

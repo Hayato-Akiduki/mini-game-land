@@ -1,5 +1,11 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
+export const playerSessions = sqliteTable('player_sessions', {
+  tokenHash: text('token_hash').primaryKey(),
+  playerId: text('player_id').notNull().unique(),
+  expiresAt: integer('expires_at').notNull(),
+}, (table) => [index('idx_player_sessions_expiry').on(table.expiresAt)]);
+
 export const scores = sqliteTable(
   'scores',
   {
@@ -32,6 +38,7 @@ export const playerProfiles = sqliteTable(
     avatar: text('avatar').notNull().default('🎮'),
     level: integer('level').notNull().default(1),
     totalPoints: integer('total_points').notNull().default(0),
+    totalEarnedPoints: integer('total_earned_points').notNull().default(0),
     updatedAt: text('updated_at').notNull(),
   },
   (table) => [
